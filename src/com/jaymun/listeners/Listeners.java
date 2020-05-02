@@ -1,6 +1,7 @@
 package com.jaymun.listeners;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -11,7 +12,9 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.Plugin;
 
@@ -20,21 +23,25 @@ import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
 
 public class Listeners implements Listener{
-	private List<Assassin> players;
+	private List<Assassin> players; 
+	private Assassin[] all_players;
 	private Assassin assassin;
 	private World world;
-	private boolean round_started = false, assassin_stop = false;; 
+	private boolean round_started = false, assassin_stop = false;
+	private int remaining_players = 0;
 	private Plugin plugin = AssassinMiniGamePlugin.getPlugin(AssassinMiniGamePlugin.class);
 	// Set the players and get the world, then set the player's type and start the game
 		public Listeners(List<Assassin> players) {
 			this.players = new ArrayList<>();
 			this.players = players;
+			this.all_players = players.toArray(new Assassin[players.size()]);
 			for (Assassin p : players) {
 				if (p.isAssassin()) {
 					assassin = p;
 					break;
 				}
 			}
+			remaining_players = players.size() - 1;
 			world = players.get(0).getPlayer().getWorld();
 			gameStart();
 		}
@@ -61,6 +68,41 @@ public class Listeners implements Listener{
 			} 
 			else {
 				return;
+			}
+		}
+		
+		@EventHandler
+		public void assassinHit(EntityDamageByEntityEvent event) {
+			if (isRound_started()) {
+				if (event.getEntity() instanceof Player && event.getDamager() instanceof Player 
+					&& event.getDamager().getName().equals(assassin.getPlayer().getName())) {
+					Player whoHit = (Player)event.getDamager();
+					Player hitted = (Player)event.getEntity();
+					System.out.println(all_players.length);
+					for (Iterator<Assassin> iterator= players.iterator(); iterator.hasNext();) {
+						Assassin a = iterator.next();
+						if (a.getPlayer().getName().equals(hitted.getName())) {
+							iterator.remove();
+							System.out.println(all_players.length);
+							remaining_players--;
+							if (remaining_players == 0) {
+								for (Assassin player : all_players) {
+									player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has won the minigame");									
+								}
+								whoHit.sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+								Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
+									whoHit.teleport(world.getSpawnLocation());
+									HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
+								}, 60);
+							}
+							hitted.sendMessage(ChatColor.RED + "You got hit, teleporting to spawn in 3 seconds");
+							Bukkit.getScheduler().runTaskLater(plugin, ()-> hitted.teleport(world.getSpawnLocation()), 60);																
+						}
+					}
+				}
+			}
+			else {
+				event.setCancelled(true);
 			}
 		}
 		
