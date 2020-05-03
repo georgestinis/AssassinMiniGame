@@ -19,17 +19,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import com.jaymun.AssassinMiniGamePlugin;
 import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
+import com.jaymun.commands.StartMiniGameCommand;
 
 
-// TODO player.setCompassTarget(Location)
 public class Listeners implements Listener{
 	private List<Assassin> players; 
 	private Assassin[] all_players;
@@ -38,7 +38,6 @@ public class Listeners implements Listener{
 	private boolean round_started = false, assassin_stop = false;
 	private int remaining_players = 0;
 	private Plugin plugin = AssassinMiniGamePlugin.getPlugin(AssassinMiniGamePlugin.class);
-	private BukkitTask tracker_task;
 	// Set the players and get the world, then set the player's type and start the game
 		public Listeners(List<Assassin> players) {
 			this.players = new ArrayList<>();
@@ -80,12 +79,51 @@ public class Listeners implements Listener{
 			}
 		}
 		
+		@EventHandler
+		public void onPlayerLeave(PlayerQuitEvent event) {
+			if (event.getPlayer().getName().equals(assassin.getPlayer().getName()) && isRound_started()) {				
+				for (Assassin player : all_players) {
+					player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has decided to ragequit the minigame");									
+				}
+				for (Assassin player : players) {
+					player.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+					Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
+						player.getPlayer().teleport(world.getSpawnLocation());						
+					}, 60);
+				}
+				HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
+				StartMiniGameCommand.ASSASSIN_COUNT = 0;
+				StartMiniGameCommand.P_COUNT = 0;
+				StartMiniGameCommand.PLAYERS.clear();
+			}
+			else if (isRound_started()) {
+				remaining_players--;
+				if (remaining_players == 0) {
+					for (Assassin player : all_players) {
+						player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has won the minigame");									
+					}
+					assassin.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+					Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
+						assassin.getPlayer().teleport(world.getSpawnLocation());
+						event.getPlayer().teleport(world.getSpawnLocation());
+						HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
+					}, 60);
+					StartMiniGameCommand.ASSASSIN_COUNT = 0;
+					StartMiniGameCommand.P_COUNT = 0;
+					StartMiniGameCommand.PLAYERS.clear();
+				}
+				else {
+					assassin.getPlayer().sendMessage(ChatColor.RED + "" + remaining_players + " people remaining!");
+					event.getPlayer().teleport(world.getSpawnLocation());
+				}
+			}
+		}
+		
 		@EventHandler(priority = EventPriority.HIGHEST)
 	    public void onPlayerItemHeld(PlayerItemHeldEvent event){  
 			// Check if the round is started otherwise do nothing
 			if (event.getPlayer().getName().equals(assassin.getPlayer().getName()) && isRound_started()) {				
-				// Create a new task that runs every 5 seconds
-		        tracker_task = new BukkitRunnable() {
+				new BukkitRunnable() {
 					@Override
 					public void run() {
 						// Get the player and the item that he/she holds in main hand
@@ -142,6 +180,12 @@ public class Listeners implements Listener{
 									whoHit.teleport(world.getSpawnLocation());
 									HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
 								}, 60);
+								StartMiniGameCommand.ASSASSIN_COUNT = 0;
+								StartMiniGameCommand.P_COUNT = 0;
+								StartMiniGameCommand.PLAYERS.clear();
+							}
+							else {
+								assassin.getPlayer().sendMessage(ChatColor.RED + "" + remaining_players + " people remaining!");
 							}
 							hitted.sendMessage(ChatColor.RED + "You got hit, teleporting to spawn in 3 seconds");
 							Bukkit.getScheduler().runTaskLater(plugin, ()-> hitted.teleport(world.getSpawnLocation()), 60);																

@@ -17,40 +17,41 @@ import com.jaymun.assassin.Assassin;
 import com.jaymun.listeners.Listeners;
 
 public class StartMiniGameCommand implements CommandExecutor{
-	private List<Assassin> players = new ArrayList<>();
-	private int p_count = 0, time, assassin_count = 0;
+	public static List<Assassin> PLAYERS = new ArrayList<>();
+	private int time;
+	public static int P_COUNT = 0, ASSASSIN_COUNT = 0;
 	protected BukkitTask task;
 	private Plugin plugin = AssassinMiniGamePlugin.getPlugin(AssassinMiniGamePlugin.class);
 	private static final int TIMER = 30;
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (time >= 0) {
-			p_count++;
+			P_COUNT++;
 			if (sender instanceof Player) {
 				Assassin a;
-				if (args.length>0 && (args[0].equals("Assassin") || args[0].equals("assassin")) && assassin_count == 0) {
+				if (args.length>0 && (args[0].equals("Assassin") || args[0].equals("assassin")) && ASSASSIN_COUNT == 0) {
 					a = new Assassin((Player)sender, true);
-					assassin_count++;
+					ASSASSIN_COUNT++;
 				}
 				else {
 					a = new Assassin((Player)sender, false);
 				}
-				players.add(a);
+				PLAYERS.add(a);
 			}
-			if (p_count == 2) {
+			if (P_COUNT == 2) {
 				//setTime(TIMER);
 				setTime(2);
 				task = new BukkitRunnable() {				
 					@Override
 					public void run() {
 						if (time == 0) {
-							AssassinMiniGamePlugin.LISTENER = new Listeners(players);
+							AssassinMiniGamePlugin.LISTENER = new Listeners(PLAYERS);
 							plugin.getServer().getPluginManager().registerEvents(AssassinMiniGamePlugin.LISTENER, plugin);
 							cancel();
 							return;
 						}
 						else if (time == 15 || time == 30) {
-							for (Assassin p : players) {
+							for (Assassin p : PLAYERS) {
 								p.getPlayer().sendMessage(ChatColor.RED + "Waiting " + time + " seconds for more players!");
 							}
 						}
@@ -66,11 +67,11 @@ public class StartMiniGameCommand implements CommandExecutor{
 	}
 
 	public List<Assassin> getPlayers() {
-		return players;
+		return PLAYERS;
 	}
 
 	public void setPlayers(List<Assassin> players) {
-		this.players = players;
+		this.PLAYERS = players;
 	}
 
 	public int getTime() {
