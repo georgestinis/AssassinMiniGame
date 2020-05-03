@@ -8,20 +8,28 @@ import java.util.Random;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import com.jaymun.AssassinMiniGamePlugin;
 import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
 
+
+// TODO player.setCompassTarget(Location)
 public class Listeners implements Listener{
 	private List<Assassin> players; 
 	private Assassin[] all_players;
@@ -30,6 +38,7 @@ public class Listeners implements Listener{
 	private boolean round_started = false, assassin_stop = false;
 	private int remaining_players = 0;
 	private Plugin plugin = AssassinMiniGamePlugin.getPlugin(AssassinMiniGamePlugin.class);
+	private BukkitTask tracker_task;
 	// Set the players and get the world, then set the player's type and start the game
 		public Listeners(List<Assassin> players) {
 			this.players = new ArrayList<>();
@@ -43,7 +52,7 @@ public class Listeners implements Listener{
 			}
 			remaining_players = players.size() - 1;
 			world = players.get(0).getPlayer().getWorld();
-			gameStart();
+			gameStart();			
 		}
 
 		@EventHandler
@@ -71,6 +80,47 @@ public class Listeners implements Listener{
 			}
 		}
 		
+		@EventHandler(priority = EventPriority.HIGHEST)
+	    public void onPlayerItemHeld(PlayerItemHeldEvent event){  
+			// Check if the round is started otherwise do nothing
+			if (event.getPlayer().getName().equals(assassin.getPlayer().getName()) && isRound_started()) {				
+				// Create a new task that runs every 5 seconds
+		        tracker_task = new BukkitRunnable() {
+					@Override
+					public void run() {
+						// Get the player and the item that he/she holds in main hand
+				        ItemStack i = assassin.getPlayer().getInventory().getItemInMainHand();
+				        // If it's a compass find the hunted player and get his/her coordinates and show them in hunter's chat
+						if(i.getType() == Material.COMPASS){
+							double closest = Double.MAX_VALUE;
+							Player closestp = null;
+							for (Assassin a : players) {
+								if (!a.isAssassin()) {
+									double dist = a.getPlayer().getLocation().distance(assassin.getPlayer().getLocation());
+									if (closest == Double.MAX_VALUE || dist < closest) {
+										closest = dist;
+										closestp = a.getPlayer();
+									}
+								}
+							}
+							if (closestp != null) {
+								assassin.getPlayer().setCompassTarget(closestp.getLocation());	
+							}				        	
+							return;
+				        }
+						// If it's not a compass cancel the task and the event
+				        else {
+				        	cancel();
+				        	event.setCancelled(true);
+				        }
+					}			
+				}.runTaskTimer(plugin, 0L, 20L);
+			}
+			else {
+				return;
+			}
+	    }
+		
 		@EventHandler
 		public void assassinHit(EntityDamageByEntityEvent event) {
 			if (isRound_started()) {
@@ -78,12 +128,10 @@ public class Listeners implements Listener{
 					&& event.getDamager().getName().equals(assassin.getPlayer().getName())) {
 					Player whoHit = (Player)event.getDamager();
 					Player hitted = (Player)event.getEntity();
-					System.out.println(all_players.length);
 					for (Iterator<Assassin> iterator= players.iterator(); iterator.hasNext();) {
 						Assassin a = iterator.next();
 						if (a.getPlayer().getName().equals(hitted.getName())) {
 							iterator.remove();
-							System.out.println(all_players.length);
 							remaining_players--;
 							if (remaining_players == 0) {
 								for (Assassin player : all_players) {
@@ -107,13 +155,6 @@ public class Listeners implements Listener{
 		}
 		
 		public void gameStart() {
-			Assassin assassin = null;
-			for (Assassin a : players) {
-				if (a.isAssassin()) {
-					assassin = a;
-					break;
-				}
-			}
 			for (Assassin a : players) {
 				a.getPlayer().sendMessage(ChatColor.GOLD + assassin.getPlayer().getName() + " is the "+ ChatColor.WHITE + "Assassin");
 				a.getPlayer().sendMessage(ChatColor.RED + "Game starts in 10 seconds");
@@ -148,6 +189,7 @@ public class Listeners implements Listener{
 						player.getPlayer().teleport(l);	
 						// Clear their inventories and give them tools
 						player.getPlayer().getInventory().clear();	
+						assassin.getPlayer().getInventory().addItem(new ItemStack(Material.COMPASS, 1));
 						setRound_started(true);
 					}, 60);	 
 				}
