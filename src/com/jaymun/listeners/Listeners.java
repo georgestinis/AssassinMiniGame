@@ -29,7 +29,7 @@ import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
 import com.jaymun.commands.StartMiniGameCommand;
 
-
+// TODO deathEvent, clear inventory, add /quit minigame
 public class Listeners implements Listener{
 	private List<Assassin> players; 
 	private Assassin[] all_players;
@@ -170,6 +170,7 @@ public class Listeners implements Listener{
 						Assassin a = iterator.next();
 						if (a.getPlayer().getName().equals(hitted.getName())) {
 							iterator.remove();
+							iterator= players.iterator();
 							remaining_players--;
 							if (remaining_players == 0) {
 								for (Assassin player : all_players) {

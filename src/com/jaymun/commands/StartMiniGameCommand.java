@@ -2,6 +2,7 @@ package com.jaymun.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -45,7 +46,15 @@ public class StartMiniGameCommand implements CommandExecutor{
 					@Override
 					public void run() {
 						if (time == 0) {
-							AssassinMiniGamePlugin.LISTENER = new Listeners(PLAYERS);
+							System.out.println("Geia");
+							if (ASSASSIN_COUNT == 0) {
+								Random rand = new Random();
+							    PLAYERS.get(rand.nextInt(PLAYERS.size())).setAssassin(true);;
+								AssassinMiniGamePlugin.LISTENER = new Listeners(PLAYERS);	
+							}
+							else {
+								AssassinMiniGamePlugin.LISTENER = new Listeners(PLAYERS);
+							}							
 							plugin.getServer().getPluginManager().registerEvents(AssassinMiniGamePlugin.LISTENER, plugin);
 							cancel();
 							return;
