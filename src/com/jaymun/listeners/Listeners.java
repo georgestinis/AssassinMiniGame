@@ -87,6 +87,7 @@ public class Listeners implements Listener{
 				}
 				for (Assassin player : players) {
 					player.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+					player.getPlayer().getInventory().clear();
 					Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
 						player.getPlayer().teleport(world.getSpawnLocation());						
 					}, 60);
@@ -98,24 +99,8 @@ public class Listeners implements Listener{
 			}
 			else if (isRound_started()) {
 				remaining_players--;
-				if (remaining_players == 0) {
-					for (Assassin player : all_players) {
-						player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has won the minigame");									
-					}
-					assassin.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
-					Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
-						assassin.getPlayer().teleport(world.getSpawnLocation());
-						event.getPlayer().teleport(world.getSpawnLocation());
-						HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
-					}, 60);
-					StartMiniGameCommand.ASSASSIN_COUNT = 0;
-					StartMiniGameCommand.P_COUNT = 0;
-					StartMiniGameCommand.PLAYERS.clear();
-				}
-				else {
-					assassin.getPlayer().sendMessage(ChatColor.RED + "" + remaining_players + " people remaining!");
-					event.getPlayer().teleport(world.getSpawnLocation());
-				}
+				checkIfGameEnded();
+				event.getPlayer().getInventory().clear();
 			}
 		}
 		
@@ -164,7 +149,6 @@ public class Listeners implements Listener{
 			if (isRound_started()) {
 				if (event.getEntity() instanceof Player && event.getDamager() instanceof Player 
 					&& event.getDamager().getName().equals(assassin.getPlayer().getName())) {
-					Player whoHit = (Player)event.getDamager();
 					Player hitted = (Player)event.getEntity();
 					for (Iterator<Assassin> iterator= players.iterator(); iterator.hasNext();) {
 						Assassin a = iterator.next();
@@ -172,24 +156,12 @@ public class Listeners implements Listener{
 							iterator.remove();
 							iterator= players.iterator();
 							remaining_players--;
-							if (remaining_players == 0) {
-								for (Assassin player : all_players) {
-									player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has won the minigame");									
-								}
-								whoHit.sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
-								Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
-									whoHit.teleport(world.getSpawnLocation());
-									HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
-								}, 60);
-								StartMiniGameCommand.ASSASSIN_COUNT = 0;
-								StartMiniGameCommand.P_COUNT = 0;
-								StartMiniGameCommand.PLAYERS.clear();
-							}
-							else {
-								assassin.getPlayer().sendMessage(ChatColor.RED + "" + remaining_players + " people remaining!");
-							}
+							checkIfGameEnded();
 							hitted.sendMessage(ChatColor.RED + "You got hit, teleporting to spawn in 3 seconds");
-							Bukkit.getScheduler().runTaskLater(plugin, ()-> hitted.teleport(world.getSpawnLocation()), 60);																
+							Bukkit.getScheduler().runTaskLater(plugin, ()-> {
+								hitted.teleport(world.getSpawnLocation());
+								hitted.getInventory().clear();
+							}, 60);																
 						}
 					}
 				}
@@ -207,6 +179,26 @@ public class Listeners implements Listener{
 			Bukkit.getScheduler().runTaskLater(plugin, ()-> initializeGame(), 140);
 		}
 
+		public void checkIfGameEnded() {
+			if (remaining_players == 0) {
+				for (Assassin player : all_players) {
+					player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has won the minigame");									
+				}
+				assassin.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+				assassin.getPlayer().getInventory().clear();
+				Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
+					assassin.getPlayer().teleport(world.getSpawnLocation());
+					HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
+				}, 60);
+				StartMiniGameCommand.ASSASSIN_COUNT = 0;
+				StartMiniGameCommand.P_COUNT = 0;
+				StartMiniGameCommand.PLAYERS.clear();
+			}
+			else {
+				assassin.getPlayer().sendMessage(ChatColor.RED + "" + remaining_players + " people remaining!");
+			}
+		}
+		
 		private void initializeGame() {
 			// Find some random coordinates to create the arena
 			int x = getRandom(-10000, 10000);
