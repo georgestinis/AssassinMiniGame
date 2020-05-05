@@ -13,7 +13,7 @@ A minecraft minigame with an assassin chasing other players
 3. When a second player joins, a 30 second timer starts for other players to join
 4. When the timer ends, if no one wanted to be assassin a random one will be chosen
 5. Assassin can one hit other players
-6. When all remaining players died, assassin win the game
+6. When all the players have died, assassin wins the game
 7. If assassin quits, dies, or use /quit automatically everyone else win
 
 ## Rules are simple... just run for your life
