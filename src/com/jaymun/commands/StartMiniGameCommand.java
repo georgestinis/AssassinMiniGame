@@ -40,8 +40,8 @@ public class StartMiniGameCommand implements CommandExecutor{
 				PLAYERS.add(a);
 			}
 			if (P_COUNT == 2) {
-				//setTime(TIMER);
-				setTime(2);
+				setTime(TIMER);
+				//setTime(2);
 				task = new BukkitRunnable() {				
 					@Override
 					public void run() {

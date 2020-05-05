@@ -17,6 +17,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -29,7 +30,7 @@ import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
 import com.jaymun.commands.StartMiniGameCommand;
 
-// TODO deathEvent, clear inventory, add /quit minigame
+// TODO deathEvent, add /quit minigame
 public class Listeners implements Listener{
 	private List<Assassin> players; 
 	private Assassin[] all_players;
@@ -98,10 +99,60 @@ public class Listeners implements Listener{
 				StartMiniGameCommand.PLAYERS.clear();
 			}
 			else if (isRound_started()) {
-				remaining_players--;
-				checkIfGameEnded();
-				event.getPlayer().getInventory().clear();
+				for (Iterator<Assassin> iterator= players.iterator(); iterator.hasNext();) {
+					Assassin a = iterator.next();
+					if (a.getPlayer().getName().equals(event.getPlayer().getName())) {
+						iterator.remove();
+						iterator= players.iterator();
+						remaining_players--;
+						checkIfGameEnded();
+						Bukkit.getScheduler().runTaskLater(plugin, ()-> {
+							event.getPlayer().getInventory().clear();
+						}, 60);																
+					}
+				}
 			}
+		}
+		
+		@EventHandler
+		public void onPlayerDeath(PlayerDeathEvent event) {
+			if (isRound_started() && event.getEntity() instanceof Player) {
+				Player p = (Player) event.getEntity();
+				if (p.getName().equals(assassin.getPlayer().getName())) {
+					for (Assassin player : all_players) {
+						player.getPlayer().sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + assassin.getPlayer().getName() + " has died, minigame has ended");									
+					}
+					for (Assassin player : players) {
+						if (!player.isAssassin()) {
+							player.getPlayer().sendMessage(ChatColor.RED + "Teleporting to spawn in 3 seconds");
+							player.getPlayer().getInventory().clear();
+							Bukkit.getScheduler().runTaskLater(plugin, ()-> { 
+								player.getPlayer().teleport(world.getSpawnLocation());						
+							}, 60);
+						}
+					}
+					HandlerList.unregisterAll(AssassinMiniGamePlugin.LISTENER);
+					StartMiniGameCommand.ASSASSIN_COUNT = 0;
+					StartMiniGameCommand.P_COUNT = 0;
+					StartMiniGameCommand.PLAYERS.clear();
+				}
+				else {
+					for (Iterator<Assassin> iterator= players.iterator(); iterator.hasNext();) {
+						Assassin a = iterator.next();
+						if (a.getPlayer().getName().equals(p.getName())) {
+							iterator.remove();
+							iterator= players.iterator();
+							remaining_players--;
+							checkIfGameEnded();
+							p.sendMessage(ChatColor.RED + "You died, teleporting to spawn in 3 seconds");
+							Bukkit.getScheduler().runTaskLater(plugin, ()-> {
+								p.teleport(world.getSpawnLocation());
+								p.getInventory().clear();
+							}, 60);																
+						}
+					}
+				}
+			}		
 		}
 		
 		@EventHandler(priority = EventPriority.HIGHEST)
