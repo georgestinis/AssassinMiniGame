@@ -30,7 +30,7 @@ import com.jaymun.Targeter;
 import com.jaymun.assassin.Assassin;
 import com.jaymun.commands.StartMiniGameCommand;
 
-// TODO deathEvent, add /quit minigame
+// TODO add /quit minigame
 public class Listeners implements Listener{
 	private List<Assassin> players; 
 	private Assassin[] all_players;
@@ -108,6 +108,7 @@ public class Listeners implements Listener{
 						checkIfGameEnded();
 						Bukkit.getScheduler().runTaskLater(plugin, ()-> {
 							event.getPlayer().getInventory().clear();
+							event.getPlayer().teleport(world.getSpawnLocation());
 						}, 60);																
 					}
 				}

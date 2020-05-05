@@ -56,6 +56,7 @@ public class StartMiniGameCommand implements CommandExecutor{
 								AssassinMiniGamePlugin.LISTENER = new Listeners(PLAYERS);
 							}							
 							plugin.getServer().getPluginManager().registerEvents(AssassinMiniGamePlugin.LISTENER, plugin);
+							((AssassinMiniGamePlugin) plugin).getCommand("quit").setExecutor((CommandExecutor)new QuitMiniGameCommand());
 							cancel();
 							return;
 						}
@@ -73,14 +74,6 @@ public class StartMiniGameCommand implements CommandExecutor{
 			((Player)sender).sendMessage(ChatColor.RED + "Game has already started");
 		}
 		return true;
-	}
-
-	public List<Assassin> getPlayers() {
-		return PLAYERS;
-	}
-
-	public void setPlayers(List<Assassin> players) {
-		this.PLAYERS = players;
 	}
 
 	public int getTime() {

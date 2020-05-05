@@ -8,3 +8,5 @@ description: A mini game
 commands:
     join:
         usage: /<command>
+    quit:
+        usage: /<command>
