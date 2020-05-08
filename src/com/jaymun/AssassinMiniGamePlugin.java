@@ -14,17 +14,20 @@ public class AssassinMiniGamePlugin extends JavaPlugin{
 		return AssassinMiniGamePlugin.instance;
 	}
 	
+	// When the plugin is enabled set a /join command
 	@Override
 	public void onEnable() {
 		instance = this;
 		instance.getCommand("join").setExecutor((CommandExecutor)new StartMiniGameCommand());
 	}
 	
+	// On disable set the plugin to null
 	@Override
 	public void onDisable() {
 		instance = null;
 	}
 	
+	// Create a static listener
 	public static Listeners getListener() {
 		return LISTENER;
 	}
@@ -32,4 +35,5 @@ public class AssassinMiniGamePlugin extends JavaPlugin{
 	public static void setListener(Listeners listener) {
 		AssassinMiniGamePlugin.LISTENER = listener;
 	}
+	//
 }

@@ -6,56 +6,34 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
  
 public class Targeter {
- 
+	
+	// Get the player you look
     public static Player getTargetPlayer(final Player player) {
+    	// Get the location of player's eye
     	Location origin = player.getEyeLocation();
+    	// Get a vector with the direction the player look
     	Vector direction = player.getEyeLocation().getDirection();
-    	int range = 10;
+    	// Set the range of look
+    	int range = 200;
+    	// Every loop the direction coordinates multiply by i, and you set your location origin as the direction coordinates
     	for (double i = 1; i <= range; i+=0.5) {
+    		// Multiply the direction with the i iterator
     		direction.multiply(i);
+    		// Then add the direction to the location
     		origin.add(direction);
+    		// Get the nearby entities that are in the specific point you look with 2 blocks height difference
     		for(Entity entity : player.getWorld().getNearbyEntities(origin, 0, 2, 0)) {
+    			// If the entity is a player and it's not you return him/her
     			if (entity instanceof Player && !entity.getName().equals(player.getName())) {
     				return (Player)entity;
     			}
     		}
+    		// Then subtract the direction you added
     		origin.subtract(direction);
+    		// Normalize the vectors
     		direction.normalize();
     	}
     	return null;
-        //return getTarget(player, player.getWorld().getPlayers());
-    }
- 
-    public static Entity getTargetEntity(final Entity entity) {
-        return getTarget(entity, entity.getWorld().getEntities());
-    }
- 
-    public static <T extends Entity> T getTarget(final Entity entity,
-            final Iterable<T> entities) {
-        if (entity == null)
-            return null;
-        Player p = null;
-        if (entity instanceof Player) {
-        	p = (Player)entity;
-	        T target = null;
-	        final double threshold = 1;
-	        for (final T other : entities) {
-	            final Vector n = other.getLocation().toVector()
-	                    .subtract(p.getEyeLocation().toVector());
-	            if (p.getEyeLocation().getDirection().normalize().crossProduct(n)
-	                    .length() < threshold
-	                    && n.normalize().dot(
-	                            p.getEyeLocation().getDirection().normalize()) >= 0) {
-	                if (target == null
-	                        || target.getLocation().distance(
-	                                p.getEyeLocation()) > other.getLocation()
-	                                .distance(p.getEyeLocation()))
-	                    target = other;
-	            }
-	        }
-	        return target;
-        }
-        return null;
     }
  
 }
