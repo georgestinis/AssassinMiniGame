@@ -19,7 +19,7 @@ import com.jaymun.listeners.Listeners;
 
 public class StartMiniGameCommand implements CommandExecutor{
 	public static List<Assassin> PLAYERS = new ArrayList<>();
-	private int time;
+	private int time = 0;
 	public static int P_COUNT = 0, ASSASSIN_COUNT = 0;
 	protected BukkitTask task;
 	private Plugin plugin = AssassinMiniGamePlugin.getPlugin(AssassinMiniGamePlugin.class);
@@ -32,9 +32,31 @@ public class StartMiniGameCommand implements CommandExecutor{
 		if (time >= 0) {
 			P_COUNT++;
 			if (sender instanceof Player) {
+				new BukkitRunnable() {					
+					@Override
+					public void run() {
+						if (P_COUNT < 2) {
+							for (Assassin player : PLAYERS) {
+								player.getPlayer().sendMessage(ChatColor.GOLD + "No other player has joined the minigame queue, game has been reset");
+							}
+							P_COUNT = 0;
+							ASSASSIN_COUNT = 0;
+							PLAYERS.clear();
+						}
+					}
+				}.runTaskLater(plugin, 6000);
+				if (P_COUNT >= 2) {
+					for (Assassin assassin : PLAYERS) {
+						if (assassin.getPlayer().getName().equals(((Player)sender).getName())) {
+							((Player)sender).sendMessage(ChatColor.GOLD + "You already wait in queue");
+							P_COUNT--;
+							return true;
+						}
+					}
+				}
 				Assassin a;
 				// If there are arguments and they are equal to [A||a]ssassin and if the assassin counter is 0, add a new assassin 
-				if (args.length>0 && (args[0].equals("Assassin") || args[0].equals("assassin")) && ASSASSIN_COUNT == 0) {
+				if (args.length>0 && (args[0].equalsIgnoreCase("Assassin")) && ASSASSIN_COUNT == 0) {
 					a = new Assassin((Player)sender, true);
 					// Increase the assassin count
 					ASSASSIN_COUNT++;
@@ -55,6 +77,7 @@ public class StartMiniGameCommand implements CommandExecutor{
 					public void run() {
 						// If time reaches 0 
 						if (time == 0) {
+							time--;
 							// Check if no one wanted to be assassin
 							if (ASSASSIN_COUNT == 0) {
 								// If there was no assassin, select a random one
